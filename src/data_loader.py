@@ -82,6 +82,14 @@ Columnas:
 - Para calcular cambio WoW (Week over Week) usa L0W vs L1W
 - Para tendencias temporales, usa las 9 columnas de semana como serie
 - "Zonas problemáticas" = métricas con deterioro consistente o valores bajos
+- IMPORTANTE: Los datos están en formato LONG (cada fila = una métrica para una zona).
+  Para COMPARAR dos métricas de la misma zona, DEBES pivotar o hacer merge. Ejemplo:
+  ```
+  lp = df_metrics[df_metrics['METRIC'] == 'Lead Penetration'][['COUNTRY','CITY','ZONE','L0W_ROLL']].rename(columns={{'L0W_ROLL':'Lead_Penetration'}})
+  po = df_metrics[df_metrics['METRIC'] == 'Perfect Orders'][['COUNTRY','CITY','ZONE','L0W_ROLL']].rename(columns={{'L0W_ROLL':'Perfect_Orders'}})
+  result = lp.merge(po, on=['COUNTRY','CITY','ZONE'])
+  ```
+  NUNCA filtres por dos métricas a la vez con & o | sin pivotar primero.
 """.format(
         countries=", ".join(f"{k}={v}" for k, v in COUNTRY_NAMES.items()),
         metrics="\n".join(f'- "{k}": {v}' for k, v in METRIC_DICTIONARY.items()),

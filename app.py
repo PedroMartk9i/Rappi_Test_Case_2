@@ -31,10 +31,11 @@ st.markdown("""
 <style>
 /* ── Fuente SF Pro (Apple system font stack) ── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Symbols+Rounded');
 
-*, *::before, *::after {
+body, p, h1, h2, h3, h4, h5, h6, span, div, input, textarea, button, select, option, label, a, li, td, th, caption {
     font-family: -apple-system, "SF Pro Display", "SF Pro Text", BlinkMacSystemFont,
-                 "Inter", "Helvetica Neue", Arial, sans-serif !important;
+                 "Inter", "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.01em;
@@ -179,6 +180,12 @@ st.markdown("""
     font-size: 0.875rem !important;
     color: #6e6e73 !important;
     padding: 0.75rem 1rem !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+[data-testid="stExpander"] summary span {
+    font-family: -apple-system, "SF Pro Text", "Inter", "Helvetica Neue", sans-serif !important;
 }
 
 /* ── Metrics / KPI cards ── */
@@ -376,7 +383,7 @@ def get_insights(_df_metrics, _df_orders):
 # Sidebar
 # ─────────────────────────────────────────────
 with st.sidebar:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Rappi_logo.svg/1200px-Rappi_logo.svg.png", width=120)
+    st.image("src/Rappi_logo.jpg", width=120)
     st.title("Rappi Operations Intelligence")
     st.caption("Sistema de Análisis Inteligente para Operaciones")
 
@@ -470,7 +477,7 @@ if page == "💬 Chatbot de Datos":
                 except Exception:
                     st.caption("⚠️ No se pudo renderizar el gráfico del historial.")
             if "dataframe" in msg and msg["dataframe"] is not None:
-                with st.expander("📋 Ver datos"):
+                with st.expander("Ver datos"):
                     st.dataframe(msg["dataframe"], width="stretch")
                     st.download_button(
                         "⬇️ Descargar CSV",
@@ -480,7 +487,7 @@ if page == "💬 Chatbot de Datos":
                         key=f"csv_hist_{msg_idx}",
                     )
             if "code" in msg and msg["code"]:
-                with st.expander("🔧 Ver código generado"):
+                with st.expander("Ver codigo generado"):
                     st.code(msg["code"], language="python")
             if "suggestions" in msg and msg["suggestions"]:
                 st.markdown("**💡 Sugerencias:**")
@@ -583,14 +590,14 @@ if page == "💬 Chatbot de Datos":
                     # --- Mostrar código generado ---
                     code = response.get("code", "")
                     if code:
-                        with st.expander("🔧 Ver código generado"):
+                        with st.expander("Ver codigo generado"):
                             st.code(code, language="python")
 
                     # --- Debug: si no hay resultado ni error, mostrar respuesta cruda ---
                     if result is None and not response.get("error") and not code:
                         raw = response.get("raw_response", "")
                         if raw:
-                            with st.expander("🐛 Debug: respuesta cruda del LLM"):
+                            with st.expander("Debug: respuesta cruda del LLM"):
                                 st.text(raw[:2000])
 
                     # --- Sugerencias ---

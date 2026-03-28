@@ -32,7 +32,7 @@ IMPORTANTE: Responde ÚNICAMENTE con el bloque JSON. NO escribas NADA antes ni d
 {{
   "thinking": "Tu razonamiento breve",
   "code": "código pandas. NUNCA uses import. pd y np ya existen. Guarda resultado en variable result.",
-  "explanation": "Explicación clara y completa EN ESPAÑOL para usuario no técnico. INCLUYE los valores y nombres concretos del resultado (ej: 'La zona con mayor valor es X con 0.85'). NO menciones nombres de columnas técnicas como L0W_ROLL.",
+  "explanation": "Explicación clara y completa EN ESPAÑOL para usuario no técnico. NUNCA uses referencias a variables Python como result['col'] o result.values[0] — eso NO se evalúa y se muestra como texto roto. En su lugar escribe texto genérico describiendo qué calcula el código (ej: 'La zona con mayor valor se muestra en la tabla de resultados'). NO menciones nombres de columnas técnicas como L0W_ROLL.",
   "chart": {{
     "type": "bar|line|scatter|heatmap|none",
     "title": "Título del gráfico",
@@ -50,7 +50,7 @@ IMPORTANTE: Responde ÚNICAMENTE con el bloque JSON. NO escribas NADA antes ni d
 - NUNCA uses import. pd (pandas) y np (numpy) ya están disponibles.
 - Solo UNA variable `result`. NUNCA result2, result3.
 - Si necesitas combinar análisis, usa pd.concat() en un solo DataFrame.
-- En la explicación, INCLUYE datos concretos del resultado (nombres de zonas, valores numéricos).
+- En la explicación, describe qué hace el análisis de forma genérica. NUNCA escribas código Python ni referencias a variables entre llaves. Los datos concretos se muestran en la tabla.
 - NO menciones nombres técnicos de columnas (L0W_ROLL, L1W_ROLL). Tradúcelos (ej: "esta semana", "semana anterior").
 - Si la pregunta NO es sobre datos, usa code="" y da explicación directa.
 - Para "zonas problemáticas" = métricas con deterioro >10% WoW.
@@ -164,6 +164,31 @@ def execute_code(code: str, df_metrics: pd.DataFrame, df_orders: pd.DataFrame) -
         return None, "", f"{type(e).__name__}: {str(e)}"
     finally:
         sys.stdout = old_stdout
+
+
+def clean_explanation(explanation: str, result) -> str:
+    """Reemplaza referencias a variables Python en la explicación con valores reales."""
+    if not explanation or not isinstance(explanation, str):
+        return explanation or ""
+
+    # Patrón: {result['COL'].values[0]} o {result['COL'].iloc[0]} etc.
+    def replace_ref(match):
+        expr = match.group(1)
+        try:
+            value = eval(expr, {"result": result, "pd": pd, "__builtins__": {}})
+            if isinstance(value, float):
+                return f"{value:.4f}".rstrip('0').rstrip('.')
+            return str(value)
+        except Exception:
+            return ""
+
+    # Reemplazar {result...} patterns
+    cleaned = re.sub(r"\{(result\b[^}]*)\}", replace_ref, explanation)
+    # Reemplazar {variable} patterns residuales (sin result)
+    cleaned = re.sub(r"\{[a-zA-Z_][a-zA-Z0-9_]*(?:\[[^\]]*\])*(?:\.[a-zA-Z_]+(?:\([^)]*\))?)*\}", "", cleaned)
+    # Limpiar espacios dobles
+    cleaned = re.sub(r"  +", " ", cleaned).strip()
+    return cleaned
 
 
 def create_chart(result: pd.DataFrame, chart_config: dict) -> go.Figure | None:
@@ -297,6 +322,9 @@ def query(
                         suggestions = retry_parsed.get("suggestions", suggestions)
             except Exception:
                 pass
+
+    # Limpiar referencias a variables en la explicación
+    explanation = clean_explanation(explanation, result)
 
     # Crear gráfico
     chart = None
